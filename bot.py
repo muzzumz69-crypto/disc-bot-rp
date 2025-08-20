@@ -1,10 +1,12 @@
 import os
 import json
 import random
+import threading
 import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
+from flask import Flask
 
 # -------------------
 # Load environment
@@ -22,6 +24,7 @@ if not GUILD_ID:
 # Bot setup
 # -------------------
 intents = discord.Intents.default()
+intents.message_content = True   # <- enable this so slash cmds + msg-based work
 bot = commands.Bot(command_prefix="!", intents=intents)
 GUILD_OBJ = discord.Object(id=GUILD_ID)
 
@@ -81,13 +84,27 @@ async def setup_hook():
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
 
-        await bot.tree.sync()
+    await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)} commands to guild {GUILD_ID}")
 
 bot.setup_hook = setup_hook
 
 # -------------------
-# Run bot
+# Flask keep-alive server for Render
 # -------------------
-bot.run(TOKEN)
+app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return "Bot is running on Render!"
+
+def run_web():
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
+# -------------------
+# Start everything
+# -------------------
+if __name__ == "__main__":
+    threading.Thread(target=run_web).start()
+    bot.run(TOKEN)
