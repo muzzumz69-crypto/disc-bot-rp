@@ -70,12 +70,47 @@ def _make_tag_command(tag: str, data: dict):
 
         await interaction.response.send_message(embed=embed)
 
-    # Build a regular app command (no dm_permission)
     return app_commands.Command(
         name=tag,
         description=f"Send a random {tag} gif",
         callback=handler
     )
+
+# -------------------
+# Help Command
+# -------------------
+@bot.tree.command(name="help", description="Show all available commands")
+async def help_command(interaction: discord.Interaction):
+    sfw_cmds = []
+    nsfw_cmds = []
+
+    for tag, data in GIFS.items():
+        if data.get("nsfw", False):
+            nsfw_cmds.append(tag)
+        else:
+            sfw_cmds.append(tag)
+
+    embed = discord.Embed(
+        title="📖 Available Commands",
+        description="Here’s a list of my commands:",
+        color=discord.Color.blurple()
+    )
+
+    if sfw_cmds:
+        embed.add_field(
+            name="✨ SFW Commands",
+            value="\n".join(f"`/{c}`" for c in sorted(sfw_cmds)),
+            inline=False
+        )
+    if nsfw_cmds:
+        embed.add_field(
+            name="🔞 NSFW Commands",
+            value="\n".join(f"`/{c}`" for c in sorted(nsfw_cmds)),
+            inline=False
+        )
+
+    embed.set_footer(text="Use /commandname to run a command!")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # -------------------
 # Bot Events
@@ -89,14 +124,19 @@ async def setup_hook():
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
 
-    await bot.tree.sync(guild=GUILD_OBJ)
-    print(f"✅ Synced {len(GIFS)} commands to dev guild {GUILD_ID}")
+    # Also add help command to dev guild
+    bot.tree.add_command(help_command, guild=GUILD_OBJ)
 
-    # Register commands globally (servers + DMs)
+    await bot.tree.sync(guild=GUILD_OBJ)
+    print(f"✅ Synced {len(GIFS)+1} commands to dev guild {GUILD_ID}")
+
+    # Register commands globally
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data))
+
+    bot.tree.add_command(help_command)  # add globally too
     await bot.tree.sync()
-    print(f"🌍 Synced {len(GIFS)} commands globally (may take up to 1h)")
+    print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
 
 bot.setup_hook = setup_hook
 
