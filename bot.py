@@ -81,7 +81,7 @@ async def setup_hook():
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
 
-    await bot.tree.sync(guild=GUILD_OBJ)
+        await bot.tree.sync()
     print(f"✅ Synced {len(GIFS)} commands to guild {GUILD_ID}")
 
 bot.setup_hook = setup_hook
@@ -90,3 +90,4 @@ bot.setup_hook = setup_hook
 # Run bot
 # -------------------
 bot.run(TOKEN)
+
