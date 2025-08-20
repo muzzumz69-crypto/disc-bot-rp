@@ -24,7 +24,7 @@ if not GUILD_ID:
 # Bot setup
 # -------------------
 intents = discord.Intents.default()
-intents.message_content = True   # <- enable this so slash cmds + msg-based work
+intents.message_content = True   # allow message content if you add text cmds later
 bot = commands.Bot(command_prefix="!", intents=intents)
 GUILD_OBJ = discord.Object(id=GUILD_ID)
 
@@ -41,16 +41,21 @@ def _make_tag_command(tag: str, data: dict):
     nsfw_only = data.get("nsfw", False)
     links = data.get("links", [])
 
-    @app_commands.command(name=tag, description=f"Send a random {tag} gif")
+    @app_commands.command(
+        name=tag,
+        description=f"Send a random {tag} gif",
+        dm_permission=True  # ✅ allow DMs
+    )
     @app_commands.describe(user="Optional user to tag")
-    async def handler(interaction: discord.Interaction, user: discord.Member = None):
-        # NSFW check
-        if nsfw_only and not interaction.channel.is_nsfw():
-            await interaction.response.send_message(
-                f"❌ The `{tag}` command can only be used in NSFW channels.",
-                ephemeral=True
-            )
-            return
+    async def handler(interaction: discord.Interaction, user: discord.User = None):
+        # NSFW check → only runs inside servers
+        if nsfw_only and interaction.guild is not None:
+            if not interaction.channel.is_nsfw():
+                await interaction.response.send_message(
+                    f"❌ The `{tag}` command can only be used in NSFW channels.",
+                    ephemeral=True
+                )
+                return
 
         if not links:
             await interaction.response.send_message("No gifs available 😔")
@@ -76,23 +81,19 @@ def _make_tag_command(tag: str, data: dict):
 # -------------------
 # Bot Events
 # -------------------
-# -------------------
-# Bot Events
-# -------------------
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
 
 async def setup_hook():
-    # Register commands for dev guild (fast sync)
+    # Register commands for dev guild (instant sync)
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
 
-    # Sync dev guild (instant)
     await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)} commands to dev guild {GUILD_ID}")
 
-    # Also register commands globally (takes ~1 hour to appear everywhere else)
+    # Also register commands globally (servers + DMs)
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data))
 
@@ -101,10 +102,10 @@ async def setup_hook():
 
 bot.setup_hook = setup_hook
 
-
 # -------------------
 # Flask keep-alive server for Render
 # -------------------
+from flask import Flask
 app = Flask(__name__)
 
 @app.route("/")
@@ -121,4 +122,3 @@ def run_web():
 if __name__ == "__main__":
     threading.Thread(target=run_web).start()
     bot.run(TOKEN)
-
