@@ -73,7 +73,7 @@ def _make_tag_command(tag: str, data: dict):
     return app_commands.Command(
         name=tag,
         description=f"Send a random {tag} gif",
-        callback=handler
+        callback=handler,
         dm_permission=True
     )
 
@@ -157,5 +157,6 @@ def run_web():
 if __name__ == "__main__":
     threading.Thread(target=run_web).start()
     bot.run(TOKEN)
+
 
 
