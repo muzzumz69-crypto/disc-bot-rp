@@ -24,7 +24,7 @@ if not GUILD_ID:
 # Bot setup
 # -------------------
 intents = discord.Intents.default()
-intents.message_content = True   # allow message content if you add text cmds later
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 GUILD_OBJ = discord.Object(id=GUILD_ID)
 
@@ -35,18 +35,12 @@ with open("gifs.json", "r", encoding="utf-8") as f:
     GIFS = json.load(f)
 
 # -------------------
-# Command factory
+# Command factory (object form)
 # -------------------
 def _make_tag_command(tag: str, data: dict):
     nsfw_only = data.get("nsfw", False)
     links = data.get("links", [])
 
-    @app_commands.command(
-        name=tag,
-        description=f"Send a random {tag} gif",
-        dm_permission=True  # ✅ allow DMs
-    )
-    @app_commands.describe(user="Optional user to tag")
     async def handler(interaction: discord.Interaction, user: discord.User = None):
         # NSFW check → only runs inside servers
         if nsfw_only and interaction.guild is not None:
@@ -76,7 +70,13 @@ def _make_tag_command(tag: str, data: dict):
 
         await interaction.response.send_message(embed=embed)
 
-    return handler
+    # ✅ Build command manually with dm_permission
+    return app_commands.Command(
+        name=tag,
+        description=f"Send a random {tag} gif",
+        callback=handler,
+        dm_permission=True
+    )
 
 # -------------------
 # Bot Events
@@ -93,7 +93,7 @@ async def setup_hook():
     await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)} commands to dev guild {GUILD_ID}")
 
-    # Also register commands globally (servers + DMs)
+    # Register commands globally (servers + DMs)
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data))
 
@@ -105,7 +105,6 @@ bot.setup_hook = setup_hook
 # -------------------
 # Flask keep-alive server for Render
 # -------------------
-from flask import Flask
 app = Flask(__name__)
 
 @app.route("/")
