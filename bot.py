@@ -35,7 +35,7 @@ with open("gifs.json", "r", encoding="utf-8") as f:
     GIFS = json.load(f)
 
 # -------------------
-# Command factory (object form)
+# Command factory
 # -------------------
 def _make_tag_command(tag: str, data: dict):
     nsfw_only = data.get("nsfw", False)
@@ -70,12 +70,11 @@ def _make_tag_command(tag: str, data: dict):
 
         await interaction.response.send_message(embed=embed)
 
-    # ✅ Build command manually with dm_permission
+    # Build a regular app command (no dm_permission)
     return app_commands.Command(
         name=tag,
         description=f"Send a random {tag} gif",
-        callback=handler,
-        # dm_permission=True
+        callback=handler
     )
 
 # -------------------
@@ -96,7 +95,6 @@ async def setup_hook():
     # Register commands globally (servers + DMs)
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data))
-
     await bot.tree.sync()
     print(f"🌍 Synced {len(GIFS)} commands globally (may take up to 1h)")
 
@@ -121,4 +119,3 @@ def run_web():
 if __name__ == "__main__":
     threading.Thread(target=run_web).start()
     bot.run(TOKEN)
-
