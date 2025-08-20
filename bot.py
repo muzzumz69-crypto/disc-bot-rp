@@ -124,9 +124,6 @@ async def setup_hook():
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
 
-    # Also add help command to dev guild
-    bot.tree.add_command(help_command, guild=GUILD_OBJ)
-
     await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)+1} commands to dev guild {GUILD_ID}")
 
@@ -134,9 +131,9 @@ async def setup_hook():
     for tag, data in GIFS.items():
         bot.tree.add_command(_make_tag_command(tag, data))
 
-    bot.tree.add_command(help_command)  # add globally too
     await bot.tree.sync()
     print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
+
 
 bot.setup_hook = setup_hook
 
@@ -159,3 +156,4 @@ def run_web():
 if __name__ == "__main__":
     threading.Thread(target=run_web).start()
     bot.run(TOKEN)
+
