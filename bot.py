@@ -52,29 +52,33 @@ def _make_tag_command(tag: str, data: dict):
                 return
 
         if not links:
-            await interaction.response.send_message("No gifs available 😔")
+            await interaction.response.send_message("No media available 😔")
             return
 
-        chosen_gif = random.choice(links)
+        chosen_file = random.choice(links)
 
         if user:
             text = f"{user.mention} is getting {tag} from {interaction.user.mention} 😏"
         else:
             text = f"{interaction.user.mention} is enjoying some {tag} action 😉"
 
-        embed = discord.Embed(
-            description=text,
-            color=discord.Color.pink()
-        )
-        embed.set_image(url=chosen_gif)
-
-        await interaction.response.send_message(embed=embed)
+        # Check file type
+        if chosen_file.endswith((".mp4", ".webm", ".mov")):
+            # Videos → send as normal message
+            await interaction.response.send_message(f"{text}\n{chosen_file}")
+        else:
+            # Images/GIFs → embed
+            embed = discord.Embed(
+                description=text,
+                color=discord.Color.pink()
+            )
+            embed.set_image(url=chosen_file)
+            await interaction.response.send_message(embed=embed)
 
     return app_commands.Command(
         name=tag,
-        description=f"Send a random {tag} gif",
+        description=f"Send a random {tag} media",
         callback=handler
-        # extras={"dm_permission": True}
     )
 
 # -------------------
@@ -135,7 +139,6 @@ async def setup_hook():
     await bot.tree.sync()
     print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
 
-
 bot.setup_hook = setup_hook
 
 # -------------------
@@ -157,8 +160,3 @@ def run_web():
 if __name__ == "__main__":
     threading.Thread(target=run_web).start()
     bot.run(TOKEN)
-
-
-
-
-
