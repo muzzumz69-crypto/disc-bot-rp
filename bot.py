@@ -64,10 +64,8 @@ def _make_tag_command(tag: str, data: dict):
 
         # Check file type
         if chosen_file.endswith((".mp4", ".webm", ".mov")):
-            # Videos → send as normal message
             await interaction.response.send_message(f"{text}\n{chosen_file}")
         else:
-            # Images/GIFs → embed
             embed = discord.Embed(
                 description=text,
                 color=discord.Color.pink()
@@ -125,16 +123,18 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
 
 async def setup_hook():
-    # Register commands for dev guild (instant sync)
+    # --- Guild commands (instant sync in your dev server) ---
     for tag, data in GIFS.items():
-        bot.tree.add_command(_make_tag_command(tag, data), guild=GUILD_OBJ)
+        cmd = _make_tag_command(tag, data)
+        bot.tree.add_command(cmd, guild=GUILD_OBJ)
 
     await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)+1} commands to dev guild {GUILD_ID}")
 
-    # Register commands globally
+    # --- Global commands (for DMs + all servers, takes up to 1h) ---
     for tag, data in GIFS.items():
-        bot.tree.add_command(_make_tag_command(tag, data))
+        cmd = _make_tag_command(tag, data)
+        bot.tree.add_command(cmd)
 
     await bot.tree.sync()
     print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
