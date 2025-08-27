@@ -6,7 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template_string
 
 # -------------------
 # Load environment
@@ -76,13 +76,15 @@ def _make_tag_command(tag: str, data: dict):
     return app_commands.Command(
         name=tag,
         description=f"Send a random {tag} media",
-        callback=handler
+        callback=handler,
+        allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True, private_channel=True)
     )
 
 # -------------------
 # Help Command
 # -------------------
 @bot.tree.command(name="help", description="Show all available commands")
+@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def help_command(interaction: discord.Interaction):
     sfw_cmds = []
     nsfw_cmds = []
@@ -95,7 +97,7 @@ async def help_command(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="📖 Available Commands",
-        description="Here’s a list of my commands:",
+        description="Here’s a list of my commands (works in servers, DMs, and group chats!):",
         color=discord.Color.blurple()
     )
 
@@ -146,9 +148,31 @@ bot.setup_hook = setup_hook
 # -------------------
 app = Flask(__name__)
 
+HTML_PAGE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GIF Bot Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; text-align: center; padding: 50px; }
+        h1 { color: #5865F2; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🤖 GIF Bot is Running!</h1>
+        <p>Status: <b>Online</b></p>
+        <p>Commands available in <b>Servers</b>, <b>DMs</b>, and <b>Group Chats</b>.</p>
+    </div>
+</body>
+</html>
+"""
+
 @app.route("/")
 def home():
-    return "Bot is running on Render!"
+    return render_template_string(HTML_PAGE)
 
 def run_web():
     port = int(os.environ.get("PORT", 5000))
