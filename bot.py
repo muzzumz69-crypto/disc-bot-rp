@@ -42,17 +42,21 @@ def _make_tag_command(tag: str, data: dict):
     links = data.get("links", [])
 
     async def handler(interaction: discord.Interaction, user: discord.User = None):
-        # NSFW check → only runs inside servers
+        # Always defer response to avoid timeouts
+        if not interaction.response.is_done():
+            await interaction.response.defer(thinking=False, ephemeral=False)
+
+        # NSFW check
         if nsfw_only and interaction.guild is not None:
             if not interaction.channel.is_nsfw():
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"❌ The `{tag}` command can only be used in NSFW channels.",
                     ephemeral=True
                 )
                 return
 
         if not links:
-            await interaction.response.send_message("No media available 😔")
+            await interaction.followup.send("No media available 😔")
             return
 
         chosen_file = random.choice(links)
@@ -62,22 +66,26 @@ def _make_tag_command(tag: str, data: dict):
         else:
             text = f"{interaction.user.mention} is enjoying some {tag} action 😉"
 
-        # Check file type
-        if chosen_file.endswith((".mp4", ".webm", ".mov")):
-            await interaction.response.send_message(f"{text}\n{chosen_file}")
-        else:
-            embed = discord.Embed(
-                description=text,
-                color=discord.Color.pink()
-            )
-            embed.set_image(url=chosen_file)
-            await interaction.response.send_message(embed=embed)
+        try:
+            if chosen_file.endswith((".mp4", ".webm", ".mov")):
+                await interaction.followup.send(f"{text}\n{chosen_file}")
+            else:
+                embed = discord.Embed(
+                    description=text,
+                    color=discord.Color.pink()
+                )
+                embed.set_image(url=chosen_file)
+                await interaction.followup.send(embed=embed)
+        except Exception as e:
+            await interaction.followup.send(f"⚠️ Error sending media: {e}")
 
     return app_commands.Command(
         name=tag,
         description=f"Send a random {tag} media",
         callback=handler,
-        allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True, private_channel=True)
+        allowed_contexts=app_commands.AppCommandContext(
+            guild=True, dm_channel=True, private_channel=True
+        )
     )
 
 # -------------------
@@ -107,12 +115,15 @@ async def help_command(interaction: discord.Interaction):
             value="\n".join(f"`/{c}`" for c in sorted(sfw_cmds)),
             inline=False
         )
-    if nsfw_cmds:
-        embed.add_field(
-            name="🔞 NSFW Commands",
-            value="\n".join(f"`/{c}`" for c in sorted(nsfw_cmds)),
-            inline=False
-        )
+
+    # Show NSFW commands only if in NSFW channel
+    if interaction.guild and interaction.channel.is_nsfw():
+        if nsfw_cmds:
+            embed.add_field(
+                name="🔞 NSFW Commands",
+                value="\n".join(f"`/{c}`" for c in sorted(nsfw_cmds)),
+                inline=False
+            )
 
     embed.set_footer(text="Use /commandname to run a command!")
     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -125,7 +136,7 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user} (ID: {bot.user.id})")
 
 async def setup_hook():
-    # --- Guild commands (instant sync in your dev server) ---
+    # --- Guild commands (instant sync for dev server) ---
     for tag, data in GIFS.items():
         cmd = _make_tag_command(tag, data)
         bot.tree.add_command(cmd, guild=GUILD_OBJ)
@@ -133,13 +144,9 @@ async def setup_hook():
     await bot.tree.sync(guild=GUILD_OBJ)
     print(f"✅ Synced {len(GIFS)+1} commands to dev guild {GUILD_ID}")
 
-    # --- Global commands (for DMs + all servers, takes up to 1h) ---
-    for tag, data in GIFS.items():
-        cmd = _make_tag_command(tag, data)
-        bot.tree.add_command(cmd)
-
-    await bot.tree.sync()
-    print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
+    # --- Global commands (enable when bot is ready for production) ---
+    # await bot.tree.sync()
+    # print(f"🌍 Synced {len(GIFS)+1} commands globally (may take up to 1h)")
 
 bot.setup_hook = setup_hook
 
@@ -182,5 +189,5 @@ def run_web():
 # Start everything
 # -------------------
 if __name__ == "__main__":
-    threading.Thread(target=run_web).start()
+    threading.Thread(target=run_web, daemon=True).start()
     bot.run(TOKEN)
