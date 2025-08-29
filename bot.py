@@ -3,7 +3,6 @@ import json
 import random
 from pathlib import Path
 import threading
-from datetime import datetime, timedelta
 
 import discord
 from discord import app_commands
@@ -91,18 +90,6 @@ async def respond(interaction: discord.Interaction, *, content: str | None = Non
         await interaction.response.send_message(content=content, embed=embed, view=view, ephemeral=ephemeral)
 
 
-# ---------- Cooldowns ----------
-cooldowns = {}
-
-def check_cooldown(user_id: int, seconds: int = 3) -> bool:
-    now = datetime.utcnow()
-    last = cooldowns.get(user_id, datetime.min)
-    if (now - last) < timedelta(seconds=seconds):
-        return False  # still cooling down
-    cooldowns[user_id] = now
-    return True
-
-
 # ---------- UI ----------
 class QuestionView(discord.ui.View):
     def __init__(self, user_id: int):
@@ -111,39 +98,31 @@ class QuestionView(discord.ui.View):
 
     @discord.ui.button(label="Truth", style=discord.ButtonStyle.success)
     async def truth_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not check_cooldown(interaction.user.id, 3):
-            return await respond(interaction, content="⏳ Please wait a few seconds before clicking again!", ephemeral=True)
-
         q = get_question("truth", self.user_id)
-        embed = make_embed("Truth", q, get_user_mode(self.user_id), interaction)
-        await respond(interaction, embed=embed, view=QuestionView(self.user_id))
+        await interaction.response.defer()
+        await interaction.channel.send(embed=make_embed("Truth", q, get_user_mode(self.user_id), interaction),
+                                       view=QuestionView(self.user_id))
 
     @discord.ui.button(label="Dare", style=discord.ButtonStyle.danger)
     async def dare_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not check_cooldown(interaction.user.id, 3):
-            return await respond(interaction, content="⏳ Please wait a few seconds before clicking again!", ephemeral=True)
-
         q = get_question("dare", self.user_id)
-        embed = make_embed("Dare", q, get_user_mode(self.user_id), interaction)
-        await respond(interaction, embed=embed, view=QuestionView(self.user_id))
+        await interaction.response.defer()
+        await interaction.channel.send(embed=make_embed("Dare", q, get_user_mode(self.user_id), interaction),
+                                       view=QuestionView(self.user_id))
 
     @discord.ui.button(label="Would You Rather", style=discord.ButtonStyle.primary)
     async def wyr_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not check_cooldown(interaction.user.id, 3):
-            return await respond(interaction, content="⏳ Please wait a few seconds before clicking again!", ephemeral=True)
-
         q = get_question("wyr", self.user_id)
-        embed = make_embed("Would You Rather", q, get_user_mode(self.user_id), interaction)
-        await respond(interaction, embed=embed, view=QuestionView(self.user_id))
+        await interaction.response.defer()
+        await interaction.channel.send(embed=make_embed("Would You Rather", q, get_user_mode(self.user_id), interaction),
+                                       view=QuestionView(self.user_id))
 
     @discord.ui.button(label="Ask Me Anything", style=discord.ButtonStyle.secondary)
     async def ama_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not check_cooldown(interaction.user.id, 3):
-            return await respond(interaction, content="⏳ Please wait a few seconds before clicking again!", ephemeral=True)
-
         q = get_question("ama", self.user_id)
-        embed = make_embed("Ask Me Anything", q, get_user_mode(self.user_id), interaction)
-        await respond(interaction, embed=embed, view=QuestionView(self.user_id))
+        await interaction.response.defer()
+        await interaction.channel.send(embed=make_embed("Ask Me Anything", q, get_user_mode(self.user_id), interaction),
+                                       view=QuestionView(self.user_id))
 
 
 class ModeSelect(discord.ui.View):
@@ -176,7 +155,6 @@ async def on_ready():
 
 # ---------- Slash Commands ----------
 @tree.command(name="truth", description="Get a Truth question with buttons.")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def truth(interaction: discord.Interaction):
     q = get_question("truth", interaction.user.id)
     await respond(interaction, embed=make_embed("Truth", q, get_user_mode(interaction.user.id), interaction),
@@ -184,7 +162,6 @@ async def truth(interaction: discord.Interaction):
 
 
 @tree.command(name="dare", description="Get a Dare question with buttons.")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def dare(interaction: discord.Interaction):
     q = get_question("dare", interaction.user.id)
     await respond(interaction, embed=make_embed("Dare", q, get_user_mode(interaction.user.id), interaction),
@@ -192,7 +169,6 @@ async def dare(interaction: discord.Interaction):
 
 
 @tree.command(name="wyr", description="Get a Would You Rather question with buttons.")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def wyr(interaction: discord.Interaction):
     q = get_question("wyr", interaction.user.id)
     await respond(interaction, embed=make_embed("Would You Rather", q, get_user_mode(interaction.user.id), interaction),
@@ -200,7 +176,6 @@ async def wyr(interaction: discord.Interaction):
 
 
 @tree.command(name="ama", description="Get an AMA prompt with buttons.")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def ama(interaction: discord.Interaction):
     q = get_question("ama", interaction.user.id)
     await respond(interaction, embed=make_embed("Ask Me Anything", q, get_user_mode(interaction.user.id), interaction),
@@ -208,14 +183,12 @@ async def ama(interaction: discord.Interaction):
 
 
 @tree.command(name="mode", description="Choose SFW or NSFW mode (per user).")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def mode(interaction: discord.Interaction):
     await respond(interaction, content="⚙️ Choose your mode:", view=ModeSelect(),
                   ephemeral=(interaction.guild is not None))
 
 
 @tree.command(name="help", description="Show available commands and usage.")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def help_command(interaction: discord.Interaction):
     e = discord.Embed(title="📖 Truth or Dare Bot Help", color=discord.Color.magenta())
     e.add_field(
@@ -238,7 +211,6 @@ async def help_command(interaction: discord.Interaction):
 
 # ---------- Admin Commands ----------
 @tree.command(name="add", description="Add a new question (Admin only).")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def add_question(interaction: discord.Interaction, category: str, mode: str, *, question: str):
     if interaction.user.id != OWNER_ID:
         return await respond(interaction, content="❌ Only the bot owner can add questions.", ephemeral=True)
@@ -252,7 +224,6 @@ async def add_question(interaction: discord.Interaction, category: str, mode: st
 
 
 @tree.command(name="remove", description="Remove a question (Admin only).")
-@app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
 async def remove_question(interaction: discord.Interaction, category: str, mode: str, *, question: str):
     if interaction.user.id != OWNER_ID:
         return await respond(interaction, content="❌ Only the bot owner can remove questions.", ephemeral=True)
@@ -308,7 +279,7 @@ HTML_PAGE = """
     
     <div class="card">
         <h2>✨ Invite the Bot</h2>
-        <p><a class="button" href="https://discord.com/oauth2/authorize?client_id=1407985841963274334&permissions=2147485696&scope=bot%20applications.commands" target="_blank">Invite Now</a></p>
+        <p><a class="button" href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147485696&scope=bot%20applications.commands" target="_blank">Invite Now</a></p>
     </div>
 </body>
 </html>
