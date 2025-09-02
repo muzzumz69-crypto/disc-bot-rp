@@ -168,6 +168,14 @@
 	"https://images-ext-1.discordapp.net/external/hs1sAOlv9PojveQ9qFjqiL6G53luT_CtswlzuIw4N5o/https/media0.giphy.com/media/v1.Y2lkPTZjMDliOTUyajFpOWZ6cGRkMGRnYmg3MXNwbmdoZGh4N3A1b251YWFkcWExeDh1cSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/eetr3eYVSe7xm/200.gif?width=523&height=275"]
   },
 
+	"sittingonlap": {
+    "nsfw": false,
+    "links": ["https://images-ext-1.discordapp.net/external/azSYVrJQlxWFiYN6rDdfjx-oaR0R1NBZZhvunhAbpv0/https/media2.giphy.com/media/v1.Y2lkPTZjMDliOTUyempmaGgybnMwenN1dDV4a295anAycHcyOHJyejIxbWljaDU3bW91MSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3ooqfFqH5jGkE/200w.gif?width=275&height=182",
+				"https://images-ext-1.discordapp.net/external/vMNOU9CkwWAcL8D9V5h78pWa9cGU5u0UCaTzuvKmmcQ/https/i.makeagif.com/media/2-04-2018/d_U7FI.gif?width=550&height=285",
+				"https://images-ext-1.discordapp.net/external/G-bFaIbmV4aVYfJMVGU_76vWWebeRlf1VRGhlKHtTYE/https/media.tenor.com/jGRPz1rKyswAAAAM/harshad-chopda-pranali-rathod.gif?width=303&height=303",
+				"https://images-ext-1.discordapp.net/external/G-bFaIbmV4aVYfJMVGU_76vWWebeRlf1VRGhlKHtTYE/https/media.tenor.com/jGRPz1rKyswAAAAM/harshad-chopda-pranali-rathod.gif?width=303&height=303",
+				"https://images-ext-1.discordapp.net/external/5MlTgp1Nurusg_T55FcZOylLMs81J6J5SSlSE3mroe8/https/media0.giphy.com/media/v1.Y2lkPTZjMDliOTUyYzNhOHk5NWh6MTg2b2Uyc3RvYmR5dHVvOGtvM2drNjd6bXhiaGx1bSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/t1lU5SufRN3TFGcWV2/200.gif?width=490&height=275"]
+  },
 	
   "hugging": {
     "nsfw": false,
@@ -177,6 +185,7 @@
     ]
   }
 }
+
 
 
 
